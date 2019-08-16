@@ -1,0 +1,129 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualMachineName": {
+      "type": "string",
+     "defaultValue":""
+    },
+    "adminPassword": {
+      "type": "securestring",
+    "defaultValue":""
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_DS3_V2"
+    },
+    "diskSkuName": {
+      "type": "string",
+      "defaultValue": "Premium_LRS"
+    },
+    "dataDiskSizeInGb": {
+      "type": "string",
+      "defaultValue": "512"
+    },
+    "diskEncryptionSetId": {
+      "type": "string",
+    "defaultValue": "/subscriptions/98a2d751-10a7-4f96-aea1-3aaa8a91ead1/resourceGroups/ANPODARSSECMKCENTRALUSEUAP/providers/Microsoft.Compute/diskEncryptionSets/MYTESTDESCENTRALUSEUAP1"
+    },
+    "virtualNetworkName": {
+        "type": "string",
+        "defaultValue":"contosoVnet"
+    },
+    "subnetName": {
+        "defaultValue": "default",
+        "type": "String"
+    },
+  "region":{  
+   "type":"string",
+   "defaultValue":"CentralUSEUAP"
+    }
+  },
+  "variables": {
+    "vnetId": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/', parameters('subnetName'))]",
+    "diskName": "[concat(parameters('virtualMachineName'), '_osDisk')]",
+    "dataDiskName": "[concat(parameters('virtualMachineName'), '_dataDisk1')]",
+    "networkInterfaceName": "[toLower(parameters('virtualMachineName'))]",
+    "imageReference": {
+      "publisher": "MicrosoftWindowsServer",
+      "offer": "WindowsServer",
+      "sku": "2012-R2-Datacenter",
+      "version": "latest"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-04-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('networkInterfaceName')]",
+      "location": "[parameters('region')]",
+      "properties": {
+          "ipConfigurations": [
+              {
+                  "name": "ipconfig1",
+                  "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                          "id": "[variables('subnetRef')]"
+                      }
+                  }
+              }
+          ]
+      }
+  },
+    {
+      "name": "[parameters('virtualMachineName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location":"[parameters('region')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+      ],
+      "properties": {
+        "osProfile": {
+          "computerName": "[parameters('virtualMachineName')]",
+          "adminUsername": "adminUserIsTest",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": "[variables('imageReference')]",
+          "osDisk": {
+            "name": "[variables('diskName')]",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('diskSkuName')]",
+              "diskEncryptionSet": {
+                "id": "[parameters('diskEncryptionSetId')]"
+              }
+            }
+          },
+          "dataDisks": [
+            {
+               "name": "[variables('dataDiskName')]",
+                "diskSizeGB": "[parameters('dataDiskSizeInGb')]",
+                "lun": "0",
+                "createOption": "Empty",
+                "managedDisk": {
+                  "storageAccountType": "[parameters('diskSkuName')]",
+                  "diskEncryptionSet": {
+                    "id": "[parameters('diskEncryptionSetId')]"
+                    }
+                }
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
