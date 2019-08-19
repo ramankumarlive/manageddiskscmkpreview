@@ -4,47 +4,32 @@
   "parameters": {
     "virtualMachineName": {
       "type": "string",
-     "defaultValue":""
+      "defaultValue": ""
     },
     "adminPassword": {
       "type": "securestring",
-    "defaultValue":""
+      "defaultValue": ""
     },
     "vmSize": {
       "type": "string",
       "defaultValue": "Standard_DS3_V2"
     },
-    "diskSkuName": {
-      "type": "string",
-      "defaultValue": "Premium_LRS"
-    },
-    "dataDiskSizeInGb": {
-      "type": "string",
-      "defaultValue": "512"
-    },
     "diskEncryptionSetId": {
       "type": "string",
-    "defaultValue": "/subscriptions/98a2d751-10a7-4f96-aea1-3aaa8a91ead1/resourceGroups/ANPODARSSECMKCENTRALUSEUAP/providers/Microsoft.Compute/diskEncryptionSets/MYTESTDESCENTRALUSEUAP1"
+      "defaultValue": "subscriptions/dd80b94e-0463-4a65-8d04-c94f403879dc/resourceGroups/CMKTesting1/providers/Microsoft.Compute/diskEncryptionSets/myTestDES"
     },
-    "virtualNetworkName": {
-        "type": "string",
-        "defaultValue":"contosoVnet"
-    },
-    "subnetName": {
-        "defaultValue": "default",
-        "type": "String"
-    },
-  "region":{  
-   "type":"string",
-   "defaultValue":"CentralUSEUAP"
+    "region": {
+      "type": "string",
+      "defaultValue": "CentralUSEUAP"
     }
   },
   "variables": {
-    "vnetId": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
-    "subnetRef": "[concat(variables('vnetID'),'/subnets/', parameters('subnetName'))]",
     "diskName": "[concat(parameters('virtualMachineName'), '_osDisk')]",
     "dataDiskName": "[concat(parameters('virtualMachineName'), '_dataDisk1')]",
     "networkInterfaceName": "[toLower(parameters('virtualMachineName'))]",
+    "publicIpAddressName": "[concat(toLower(parameters('virtualMachineName')),'_ip')]",
+    "vnetName": "[concat(toLower(parameters('virtualMachineName')),'_vnet')]",
+    "subnetName": "[concat(toLower(parameters('virtualMachineName')),'_subnet')]",
     "imageReference": {
       "publisher": "MicrosoftWindowsServer",
       "offer": "WindowsServer",
@@ -54,29 +39,73 @@
   },
   "resources": [
     {
-      "apiVersion": "2017-04-01",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "concat(parameters('virtualMachineName'),'_vnet')",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('region')]",
+      "scale": null,
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.2.3.0/24"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "concat(parameters('virtualMachineName'),'_subnet')",
+            "properties": {
+              "provisioningState": "Succeeded",
+              "addressPrefix": "10.2.3.0/24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "sku": {
+        "name": "Basic",
+        "tier": "Regional"
+      },
+      "name": "[variables('publicIpAddressName')]",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('region')]",
+      "scale": null,
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+    {
+      "apiVersion": "2019-06-01",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('networkInterfaceName')]",
       "location": "[parameters('region')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
       "properties": {
-          "ipConfigurations": [
-              {
-                  "name": "ipconfig1",
-                  "properties": {
-                      "privateIPAllocationMethod": "Dynamic",
-                      "subnet": {
-                          "id": "[variables('subnetRef')]"
-                      }
-                  }
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpAddressName'))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
               }
-          ]
+            }
+          }
+        ]
       }
-  },
+    },
     {
       "name": "[parameters('virtualMachineName')]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location":"[parameters('region')]",
+      "location": "[parameters('region')]",
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
       ],
@@ -95,7 +124,7 @@
             "name": "[variables('diskName')]",
             "createOption": "FromImage",
             "managedDisk": {
-              "storageAccountType": "[parameters('diskSkuName')]",
+              "storageAccountType": "Premium_LRS",
               "diskEncryptionSet": {
                 "id": "[parameters('diskEncryptionSetId')]"
               }
@@ -103,16 +132,16 @@
           },
           "dataDisks": [
             {
-               "name": "[variables('dataDiskName')]",
-                "diskSizeGB": "[parameters('dataDiskSizeInGb')]",
-                "lun": "0",
-                "createOption": "Empty",
-                "managedDisk": {
-                  "storageAccountType": "[parameters('diskSkuName')]",
-                  "diskEncryptionSet": {
-                    "id": "[parameters('diskEncryptionSetId')]"
-                    }
+              "name": "[variables('dataDiskName')]",
+              "diskSizeGB": "128",
+              "lun": "0",
+              "createOption": "Empty",
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS",
+                "diskEncryptionSet": {
+                  "id": "[parameters('diskEncryptionSetId')]"
                 }
+              }
             }
           ]
         },
