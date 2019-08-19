@@ -40,7 +40,7 @@
   "resources": [
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "concat(parameters('virtualMachineName'),'_vnet')",
+      "name": "[variables('vnetName')]",
       "apiVersion": "2019-06-01",
       "location": "[parameters('region')]",
       "scale": null,
@@ -52,7 +52,7 @@
         },
         "subnets": [
           {
-            "name": "concat(parameters('virtualMachineName'),'_subnet')",
+            "name": "[variables('subnetName')]",
             "properties": {
               "provisioningState": "Succeeded",
               "addressPrefix": "10.2.3.0/24"
