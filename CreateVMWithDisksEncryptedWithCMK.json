@@ -16,7 +16,7 @@
     },
     "diskEncryptionSetId": {
       "type": "string",
-      "defaultValue": "subscriptions/dd80b94e-0463-4a65-8d04-c94f403879dc/resourceGroups/CMKTesting1/providers/Microsoft.Compute/diskEncryptionSets/myTestDES"
+      "defaultValue": ""
     },
     "region": {
       "type": "string",
