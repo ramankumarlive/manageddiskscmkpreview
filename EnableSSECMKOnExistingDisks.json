@@ -25,6 +25,9 @@
         "tags": {},
         "properties": {
           "encryption": {
+            "creationData": {
+              "createOption": "Empty"
+            },
             "type": "EncryptionAtRestWithCustomerKey",
             "diskEncryptionSetId": "[parameters('diskEncryptionSetId')]"
         }
