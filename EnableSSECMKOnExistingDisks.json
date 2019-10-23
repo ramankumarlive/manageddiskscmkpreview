@@ -24,10 +24,10 @@
         "location":"[parameters('region')]",
         "tags": {},
         "properties": {
+          "creationData": {
+            "createOption": "Empty"
+          },
           "encryption": {
-            "creationData": {
-              "createOption": "Empty"
-            },
             "type": "EncryptionAtRestWithCustomerKey",
             "diskEncryptionSetId": "[parameters('diskEncryptionSetId')]"
         }
