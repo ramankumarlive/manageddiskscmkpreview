@@ -125,9 +125,7 @@
             "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "Premium_LRS",
-              "diskEncryptionSet": {
-                "id": "[parameters('diskEncryptionSetId')]"
-              }
+              "tier": "P10"
             }
           },
           "dataDisks": [
@@ -138,9 +136,7 @@
               "createOption": "Empty",
               "managedDisk": {
                 "storageAccountType": "Premium_LRS",
-                "diskEncryptionSet": {
-                  "id": "[parameters('diskEncryptionSetId')]"
-                }
+                 "tier": "P30"
               }
             }
           ]
